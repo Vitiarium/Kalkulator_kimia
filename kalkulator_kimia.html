@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulator Kimia</title>
+<style>
+  :root{
+    --bg:#0f1117;
+    --panel:#1a1d27;
+    --card:#20232e;
+    --accent:#4fc3f7;
+    --accent2:#00e5ff;
+    --text:#e8eaf6;
+    --subtext:#7986cb;
+    --success:#69f0ae;
+    --warning:#ffd740;
+    --danger:#ff5252;
+    --border:#2a2d3e;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Courier New", monospace;
+  }
+  header{
+    background:var(--panel);
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:16px 24px;
+    border-bottom:1px solid var(--border);
+  }
+  header h1{
+    font-size:22px;
+    font-weight:bold;
+    color:var(--accent);
+    margin:0;
+    letter-spacing:0.5px;
+  }
+  header span.sub{
+    color:var(--subtext);
+    font-size:15px;
+  }
+  main{
+    max-width:920px;
+    margin:0 auto;
+    padding:24px 16px 60px;
+  }
+  section.card{
+    margin-bottom:28px;
+  }
+  .section-title{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+  }
+  .section-title .diamond{
+    color:var(--accent);
+    font-weight:bold;
+    font-size:13px;
+    white-space:nowrap;
+  }
+  .section-title .rule{
+    flex:1;
+    height:1px;
+    background:var(--border);
+  }
+  .hint{
+    color:var(--subtext);
+    font-size:11px;
+    margin:0 0 6px 0;
+  }
+  .row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+    margin-bottom:4px;
+  }
+  input[type="text"]{
+    background:var(--card);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:6px;
+    padding:0 12px;
+    height:36px;
+    font-family:"Courier New", monospace;
+    font-size:12px;
+    flex:1 1 160px;
+    min-width:120px;
+  }
+  input[type="text"]::placeholder{
+    color:var(--subtext);
+  }
+  input[type="text"]:focus{
+    outline:none;
+    border-color:var(--accent);
+  }
+  button.hitung{
+    background:var(--accent);
+    color:#0f1117;
+    border:none;
+    border-radius:8px;
+    height:38px;
+    padding:0 20px;
+    font-family:"Courier New", monospace;
+    font-weight:bold;
+    font-size:12px;
+    cursor:pointer;
+    flex:0 0 auto;
+  }
+  button.hitung:hover{
+    background:var(--accent2);
+  }
+  .toggle-group{
+    display:flex;
+    gap:0;
+    margin-bottom:10px;
+    width:fit-content;
+    border-radius:6px;
+    overflow:hidden;
+    border:1px solid var(--border);
+  }
+  .toggle-group button{
+    background:var(--panel);
+    color:var(--text);
+    border:none;
+    padding:8px 18px;
+    font-family:"Courier New", monospace;
+    font-size:11px;
+    cursor:pointer;
+  }
+  .toggle-group button.active{
+    background:var(--accent);
+    color:#0f1117;
+    font-weight:bold;
+  }
+  .result-box{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:12px 14px;
+    min-height:60px;
+    color:var(--success);
+    font-size:12px;
+    font-weight:bold;
+    white-space:pre-wrap;
+    margin-top:4px;
+  }
+  .result-box.empty{
+    color:var(--subtext);
+    font-weight:normal;
+  }
+  .result-box.warning{ color:var(--warning); }
+  .history-box{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 14px;
+    height:80px;
+    overflow-y:auto;
+    color:var(--subtext);
+    font-size:10px;
+    white-space:pre-wrap;
+    margin-top:6px;
+  }
+  .history-box:empty::before{
+    content:"(riwayat akan muncul di sini)";
+    opacity:0.6;
+  }
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-track{ background:var(--card); }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧪⚗️ KALKULATOR KIMIA</h1>
+  <span class="sub">✨Buatan Kelompok 14✨</span>
+</header>
+
+<main>
+
+  <!-- Molaritas -->
+  <section class="card">
+    <div class="section-title"><span class="diamond">◆ Molaritas</span><span class="rule"></span></div>
+    <div class="row">
+      <input type="text" id="mol_massa" placeholder="Massa (g)">
+      <input type="text" id="mol_mr" placeholder="Mr (g/mol)">
+      <input type="text" id="mol_v" placeholder="Volume (L)">
+      <button class="hitung" onclick="hitungMolaritas()">Hitung</button>
+    </div>
+    <div class="result-box empty" id="mol_result">Hasil akan muncul di sini.</div>
+    <div class="history-box" id="mol_history"></div>
+  </section>
+
+  <!-- Pengenceran -->
+  <section class="card">
+    <div class="section-title"><span class="diamond">◆ Pengenceran (M₁V₁ = M₂V₂)</span><span class="rule"></span></div>
+    <div class="row">
+      <input type="text" id="enc_m1" placeholder="M₁ (awal)">
+      <input type="text" id="enc_v1" placeholder="V₁ (awal)">
+      <input type="text" id="enc_m2" placeholder="M₂ (target)">
+      <button class="hitung" onclick="hitungPengenceran()">Hitung</button>
+    </div>
+    <div class="result-box empty" id="enc_result">Hasil akan muncul di sini.</div>
+    <div class="history-box" id="enc_history"></div>
+  </section>
+
+  <!-- pH Asam / Basa Kuat -->
+  <section class="card">
+    <div class="section-title"><span class="diamond">◆ pH Asam / Basa Kuat</span><span class="rule"></span></div>
+    <div class="row">
+      <input type="text" id="ph_h" placeholder="[H⁺] atau [OH⁻] (mol/L)">
+      <button class="hitung" onclick="hitungPh()">Hitung</button>
+    </div>
+    <div class="result-box empty" id="ph_result">Hasil akan muncul di sini.</div>
+    <div class="history-box" id="ph_history"></div>
+  </section>
+
+  <!-- Mr Otomatis -->
+  <section class="card">
+    <div class="section-title"><span class="diamond">◆ Mr Otomatis</span><span class="rule"></span></div>
+    <div class="row">
+      <input type="text" id="mr_rumus" placeholder="Rumus kimia (contoh: H2O, Na2SO4)" style="flex:1 1 280px;">
+      <button class="hitung" onclick="hitungMr()">Hitung</button>
+    </div>
+    <div class="result-box empty" id="mr_result">Hasil akan muncul di sini.</div>
+    <div class="history-box" id="mr_history"></div>
+  </section>
+
+  <!-- pH Buffer -->
+  <section class="card">
+    <div class="section-title"><span class="diamond">◆ pH Buffer</span><span class="rule"></span></div>
+    <div class="toggle-group" id="buf_toggle">
+      <button class="active" data-val="Buffer Asam" onclick="toggleBuffer('Buffer Asam')">Buffer Asam</button>
+      <button data-val="Buffer Basa" onclick="toggleBuffer('Buffer Basa')">Buffer Basa</button>
+    </div>
+    <div class="row">
+      <input type="text" id="buf_k" placeholder="Ka">
+      <input type="text" id="buf_mol1" placeholder="Mol asam lemah">
+      <input type="text" id="buf_mol2" placeholder="Mol basa konjugasi">
+      <button class="hitung" onclick="hitungBuffer()">Hitung</button>
+    </div>
+    <div class="result-box empty" id="buf_result">Hasil akan muncul di sini.</div>
+    <div class="history-box" id="buf_history"></div>
+  </section>
+
+  <!-- Gas Ideal -->
+  <section class="card">
+    <div class="section-title"><span class="diamond">◆ Gas Ideal (PV = nRT)</span><span class="rule"></span></div>
+    <p class="hint">Kosongkan 1 kolom yang ingin dihitung →</p>
+    <div class="row">
+      <input type="text" id="gas_P" placeholder="P (atm)">
+      <input type="text" id="gas_V" placeholder="V (L)">
+      <input type="text" id="gas_n" placeholder="n (mol)">
+      <input type="text" id="gas_T" placeholder="T (K)">
+      <button class="hitung" onclick="hitungGas()">Hitung</button>
+    </div>
+    <div class="result-box empty" id="gas_result">Hasil akan muncul di sini.</div>
+    <div class="history-box" id="gas_history"></div>
+  </section>
+
+  <!-- Pereaksi Pembatas -->
+  <section class="card">
+    <div class="section-title"><span class="diamond">◆ Pereaksi Pembatas (aA + bB → Produk)</span><span class="rule"></span></div>
+    <div class="row">
+      <input type="text" id="pp_a" placeholder="Koef A">
+      <input type="text" id="pp_ma" placeholder="Mol A">
+      <input type="text" id="pp_b" placeholder="Koef B">
+      <input type="text" id="pp_mb" placeholder="Mol B">
+      <button class="hitung" onclick="hitungPp()">Hitung</button>
+    </div>
+    <div class="result-box empty" id="pp_result">Hasil akan muncul di sini.</div>
+    <div class="history-box" id="pp_history"></div>
+  </section>
+
+</main>
+
+<script>
+  // ---------- tabel AR (massa atom relatif) ----------
+  const AR = {
+    H:1.008, He:4.003, Li:6.941, Be:9.012, B:10.811, C:12.011, N:14.007, O:15.999,
+    F:18.998, Ne:20.180, Na:22.990, Mg:24.305, Al:26.982, Si:28.086, P:30.974,
+    S:32.065, Cl:35.453, Ar:39.948, K:39.098, Ca:40.078, Sc:44.956, Ti:47.867,
+    V:50.942, Cr:51.996, Mn:54.938, Fe:55.845, Co:58.933, Ni:58.693, Cu:63.546,
+    Zn:65.380, Ga:69.723, Ge:72.630, As:74.922, Se:78.971, Br:79.904, Kr:83.798,
+    Rb:85.468, Sr:87.620, Y:88.906, Zr:91.224, Nb:92.906, Mo:95.950, Tc:98.000,
+    Ru:101.070, Rh:102.906, Pd:106.420, Ag:107.868, Cd:112.414, In:114.818,
+    Sn:118.710, Sb:121.760, Te:127.600, I:126.904, Xe:131.293, Cs:132.905,
+    Ba:137.327, La:138.905, Ce:140.116, Pr:140.908, Nd:144.242, Pm:145.000,
+    Sm:150.360, Eu:151.964, Gd:157.250, Tb:158.925, Dy:162.500, Ho:164.930,
+    Er:167.259, Tm:168.934, Yb:173.054, Lu:174.967, Hf:178.490, Ta:180.948,
+    W:183.840, Re:186.207, Os:190.230, Ir:192.217, Pt:195.084, Au:196.967,
+    Hg:200.592, Tl:204.383, Pb:207.200, Bi:208.980, Po:209.000, At:210.000,
+    Rn:222.000, Fr:223.000, Ra:226.000, Ac:227.000, Th:232.038, Pa:231.036,
+    U:238.029, Np:237.000, Pu:244.000, Am:243.000, Cm:247.000, Bk:247.000,
+    Cf:251.000, Es:252.000, Fm:257.000, Md:258.000, No:259.000, Lr:262.000,
+    Rf:267.000, Db:268.000, Sg:271.000, Bh:272.000, Hs:270.000, Mt:276.000,
+    Ds:281.000, Rg:280.000, Cn:285.000, Nh:284.000, Fl:289.000, Mc:288.000,
+    Lv:293.000, Ts:294.000, Og:294.000,
+  };
+
+  // ---------- util ----------
+  function toFloat(s){
+    if (s === null || s === undefined) return null;
+    s = String(s).trim().replace(",", ".");
+    if (s === "" || isNaN(Number(s))) return null;
+    return Number(s);
+  }
+  function val(id){ return document.getElementById(id).value; }
+
+  function showResult(id, text, kind){
+    // kind: "success" (default), "warning"
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.classList.remove("empty", "warning");
+    if (kind === "warning") el.classList.add("warning");
+  }
+
+  function addHistory(id, text){
+    const el = document.getElementById(id);
+    const existing = el.textContent.trim();
+    if (existing){
+      el.textContent = existing + "\n" + "─".repeat(36) + "\n" + text;
+    } else {
+      el.textContent = text;
+    }
+    el.scrollTop = el.scrollHeight;
+  }
+
+  // ---------- Molaritas ----------
+  function hitungMolaritas(){
+    const m = toFloat(val("mol_massa"));
+    const mr = toFloat(val("mol_mr"));
+    const v = toFloat(val("mol_v"));
+    if (m === null || mr === null || v === null || mr === 0 || v === 0){
+      showResult("mol_result", "⚠ Input tidak valid.", "warning");
+      return;
+    }
+    const n = m / mr;
+    const M = n / v;
+    const teks = `n = ${n.toFixed(4)} mol\nMolaritas = ${M.toFixed(4)} M`;
+    showResult("mol_result", teks);
+    addHistory("mol_history", teks);
+  }
+
+  // ---------- Pengenceran ----------
+  function hitungPengenceran(){
+    const m1 = toFloat(val("enc_m1"));
+    const v1 = toFloat(val("enc_v1"));
+    const m2 = toFloat(val("enc_m2"));
+    if (m1 === null || v1 === null || m2 === null || m2 === 0){
+      showResult("enc_result", "⚠ Input tidak valid.", "warning");
+      return;
+    }
+    const v2 = (m1 * v1) / m2;
+    const teks = `V₂ = ${v2.toFixed(4)} L`;
+    showResult("enc_result", teks);
+    addHistory("enc_history", teks);
+  }
+
+  // ---------- pH Asam/Basa Kuat ----------
+  function hitungPh(){
+    const h = toFloat(val("ph_h"));
+    if (h === null || h <= 0){
+      showResult("ph_result", "⚠ Input tidak valid.", "warning");
+      return;
+    }
+    const pH = -Math.log10(h);
+    const teks = `pH = ${pH.toFixed(4)}`;
+    showResult("ph_result", teks);
+    addHistory("ph_history", teks);
+  }
+
+  // ---------- Mr Otomatis (parser rumus kimia) ----------
+  function parseRumus(s){
+    let i = 0;
+    function parse(){
+      const hasil = {};
+      while (i < s.length){
+        const c = s[i];
+        if (c === "("){
+          i++;
+          const sub = parse();
+          let angka = "";
+          while (i < s.length && /[0-9]/.test(s[i])){ angka += s[i]; i++; }
+          const mul = angka ? parseInt(angka, 10) : 1;
+          for (const el in sub){
+            hasil[el] = (hasil[el] || 0) + sub[el] * mul;
+          }
+        } else if (c === ")"){
+          i++;
+          return hasil;
+        } else if (/[A-Z]/.test(c)){
+          let el = c;
+          i++;
+          while (i < s.length && /[a-z]/.test(s[i])){ el += s[i]; i++; }
+          let angka = "";
+          while (i < s.length && /[0-9]/.test(s[i])){ angka += s[i]; i++; }
+          const jml = angka ? parseInt(angka, 10) : 1;
+          if (!(el in AR)) throw { tipe: "KeyError", el };
+          hasil[el] = (hasil[el] || 0) + jml;
+        } else {
+          throw { tipe: "ValueError", msg: `Karakter tidak valid: '${c}'` };
+        }
+      }
+      return hasil;
+    }
+    return parse();
+  }
+
+  function hitungMr(){
+    const rumus = val("mr_rumus").trim();
+    if (!rumus){
+      showResult("mr_result", "⚠ Input kosong.", "warning");
+      return;
+    }
+    const openCount = (rumus.match(/\(/g) || []).length;
+    const closeCount = (rumus.match(/\)/g) || []).length;
+    if (openCount !== closeCount){
+      showResult("mr_result", "⚠ Tanda kurung tidak seimbang.", "warning");
+      return;
+    }
+    try {
+      const komposisi = parseRumus(rumus);
+      let total = 0;
+      for (const el in komposisi) total += AR[el] * komposisi[el];
+      const detail = Object.keys(komposisi).sort()
+        .map(el => `${el}×${komposisi[el]}`)
+        .join("  +  ");
+      const teks = `Mr ${rumus} = ${total.toFixed(3)} g/mol\n${detail}`;
+      showResult("mr_result", teks);
+      addHistory("mr_history", teks);
+    } catch (e){
+      if (e.tipe === "KeyError"){
+        showResult("mr_result", `⚠ Unsur ${e.el} tidak dikenali.`, "warning");
+      } else if (e.tipe === "ValueError"){
+        showResult("mr_result", `⚠ ${e.msg}`, "warning");
+      } else {
+        showResult("mr_result", "⚠ Input tidak valid.", "warning");
+      }
+    }
+  }
+
+  // ---------- pH Buffer ----------
+  let bufTipe = "Buffer Asam";
+  function toggleBuffer(v){
+    bufTipe = v;
+    document.querySelectorAll("#buf_toggle button").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.val === v);
+    });
+    if (v === "Buffer Asam"){
+      document.getElementById("buf_k").placeholder = "Ka";
+      document.getElementById("buf_mol1").placeholder = "Mol asam lemah";
+      document.getElementById("buf_mol2").placeholder = "Mol basa konjugasi";
+    } else {
+      document.getElementById("buf_k").placeholder = "Kb";
+      document.getElementById("buf_mol1").placeholder = "Mol basa lemah";
+      document.getElementById("buf_mol2").placeholder = "Mol asam konjugasi";
+    }
+  }
+
+  function hitungBuffer(){
+    const K = toFloat(val("buf_k"));
+    const mol1 = toFloat(val("buf_mol1"));
+    const mol2 = toFloat(val("buf_mol2"));
+    if (K === null || mol1 === null || mol2 === null || K <= 0 || mol1 === 0){
+      showResult("buf_result", "⚠ Input tidak valid.", "warning");
+      return;
+    }
+    let teks;
+    if (bufTipe === "Buffer Asam"){
+      const pH = -Math.log10(K) + Math.log10(mol2 / mol1);
+      teks = `pH Buffer Asam = ${pH.toFixed(4)}`;
+    } else {
+      const pOH = -Math.log10(K) + Math.log10(mol2 / mol1);
+      const pH = 14 - pOH;
+      teks = `pH Buffer Basa = ${pH.toFixed(4)}`;
+    }
+    showResult("buf_result", teks);
+    addHistory("buf_history", teks);
+  }
+
+  // ---------- Gas Ideal ----------
+  function hitungGas(){
+    const R = 0.08206;
+    const P_s = val("gas_P").trim();
+    const V_s = val("gas_V").trim();
+    const n_s = val("gas_n").trim();
+    const T_s = val("gas_T").trim();
+    const empty = [P_s, V_s, n_s, T_s].map(s => s === "");
+    if (empty.filter(Boolean).length !== 1){
+      showResult("gas_result", "⚠ Kosongkan tepat 1 kolom.", "warning");
+      return;
+    }
+    try {
+      const vals = [P_s, V_s, n_s, T_s].map(s => s === "" ? null : toFloat(s));
+      const [P, V, n, T] = vals;
+      let teks;
+      if (empty[0]){
+        const res = (n * R * T) / V;
+        teks = `P = ${res.toFixed(4)} atm`;
+      } else if (empty[1]){
+        const res = (n * R * T) / P;
+        teks = `V = ${res.toFixed(4)} L`;
+      } else if (empty[2]){
+        const res = (P * V) / (R * T);
+        teks = `n = ${res.toFixed(4)} mol`;
+      } else {
+        const res = (P * V) / (n * R);
+        teks = `T = ${res.toFixed(4)} K`;
+      }
+      if (teks.includes("NaN") || teks.includes("Infinity")) throw new Error("invalid");
+      showResult("gas_result", teks);
+      addHistory("gas_history", teks);
+    } catch (e){
+      showResult("gas_result", "⚠ Input tidak valid.", "warning");
+    }
+  }
+
+  // ---------- Pereaksi Pembatas ----------
+  function hitungPp(){
+    const a = toFloat(val("pp_a"));
+    const ma = toFloat(val("pp_ma"));
+    const b = toFloat(val("pp_b"));
+    const mb = toFloat(val("pp_mb"));
+    if (a === null || ma === null || b === null || mb === null || a === 0 || b === 0){
+      showResult("pp_result", "⚠ Input tidak valid.", "warning");
+      return;
+    }
+    const rA = ma / a;
+    const rB = mb / b;
+    let teks;
+    if (rA < rB){
+      const sisa = mb - (b / a) * ma;
+      teks = `Pereaksi Pembatas: Zat A\nZat B sisa: ${sisa.toFixed(4)} mol`;
+    } else if (rB < rA){
+      const sisa = ma - (a / b) * mb;
+      teks = `Pereaksi Pembatas: Zat B\nZat A sisa: ${sisa.toFixed(4)} mol`;
+    } else {
+      teks = "Kedua zat habis bereaksi (stoikiometris).";
+    }
+    showResult("pp_result", teks);
+    addHistory("pp_history", teks);
+  }
+</script>
+
+</body>
+</html>
