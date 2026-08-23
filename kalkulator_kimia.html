@@ -186,7 +186,6 @@
 
 <main>
 
-  <!-- Molaritas -->
   <section class="card">
     <div class="section-title"><span class="diamond">◆ Molaritas</span><span class="rule"></span></div>
     <div class="row">
@@ -199,7 +198,6 @@
     <div class="history-box" id="mol_history"></div>
   </section>
 
-  <!-- Pengenceran -->
   <section class="card">
     <div class="section-title"><span class="diamond">◆ Pengenceran (M₁V₁ = M₂V₂)</span><span class="rule"></span></div>
     <div class="row">
@@ -212,7 +210,6 @@
     <div class="history-box" id="enc_history"></div>
   </section>
 
-  <!-- pH Asam / Basa Kuat -->
   <section class="card">
     <div class="section-title"><span class="diamond">◆ pH Asam / Basa Kuat</span><span class="rule"></span></div>
     <div class="row">
@@ -223,7 +220,6 @@
     <div class="history-box" id="ph_history"></div>
   </section>
 
-  <!-- Mr Otomatis -->
   <section class="card">
     <div class="section-title"><span class="diamond">◆ Mr Otomatis</span><span class="rule"></span></div>
     <div class="row">
@@ -234,7 +230,6 @@
     <div class="history-box" id="mr_history"></div>
   </section>
 
-  <!-- pH Buffer -->
   <section class="card">
     <div class="section-title"><span class="diamond">◆ pH Buffer</span><span class="rule"></span></div>
     <div class="toggle-group" id="buf_toggle">
@@ -251,7 +246,6 @@
     <div class="history-box" id="buf_history"></div>
   </section>
 
-  <!-- Gas Ideal -->
   <section class="card">
     <div class="section-title"><span class="diamond">◆ Gas Ideal (PV = nRT)</span><span class="rule"></span></div>
     <p class="hint">Kosongkan 1 kolom yang ingin dihitung →</p>
@@ -266,7 +260,6 @@
     <div class="history-box" id="gas_history"></div>
   </section>
 
-  <!-- Pereaksi Pembatas -->
   <section class="card">
     <div class="section-title"><span class="diamond">◆ Pereaksi Pembatas (aA + bB → Produk)</span><span class="rule"></span></div>
     <div class="row">
@@ -283,7 +276,6 @@
 </main>
 
 <script>
-  // ---------- tabel AR (massa atom relatif) ----------
   const AR = {
     H:1.008, He:4.003, Li:6.941, Be:9.012, B:10.811, C:12.011, N:14.007, O:15.999,
     F:18.998, Ne:20.180, Na:22.990, Mg:24.305, Al:26.982, Si:28.086, P:30.974,
@@ -306,7 +298,6 @@
     Lv:293.000, Ts:294.000, Og:294.000,
   };
 
-  // ---------- util ----------
   function toFloat(s){
     if (s === null || s === undefined) return null;
     s = String(s).trim().replace(",", ".");
@@ -316,7 +307,6 @@
   function val(id){ return document.getElementById(id).value; }
 
   function showResult(id, text, kind){
-    // kind: "success" (default), "warning"
     const el = document.getElementById(id);
     el.textContent = text;
     el.classList.remove("empty", "warning");
@@ -334,7 +324,6 @@
     el.scrollTop = el.scrollHeight;
   }
 
-  // ---------- Molaritas ----------
   function hitungMolaritas(){
     const m = toFloat(val("mol_massa"));
     const mr = toFloat(val("mol_mr"));
@@ -350,7 +339,6 @@
     addHistory("mol_history", teks);
   }
 
-  // ---------- Pengenceran ----------
   function hitungPengenceran(){
     const m1 = toFloat(val("enc_m1"));
     const v1 = toFloat(val("enc_v1"));
@@ -365,7 +353,6 @@
     addHistory("enc_history", teks);
   }
 
-  // ---------- pH Asam/Basa Kuat ----------
   function hitungPh(){
     const h = toFloat(val("ph_h"));
     if (h === null || h <= 0){
@@ -378,7 +365,6 @@
     addHistory("ph_history", teks);
   }
 
-  // ---------- Mr Otomatis (parser rumus kimia) ----------
   function parseRumus(s){
     let i = 0;
     function parse(){
@@ -448,7 +434,6 @@
     }
   }
 
-  // ---------- pH Buffer ----------
   let bufTipe = "Buffer Asam";
   function toggleBuffer(v){
     bufTipe = v;
@@ -487,7 +472,6 @@
     addHistory("buf_history", teks);
   }
 
-  // ---------- Gas Ideal ----------
   function hitungGas(){
     const R = 0.08206;
     const P_s = val("gas_P").trim();
@@ -524,7 +508,6 @@
     }
   }
 
-  // ---------- Pereaksi Pembatas ----------
   function hitungPp(){
     const a = toFloat(val("pp_a"));
     const ma = toFloat(val("pp_ma"));
