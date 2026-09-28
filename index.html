@@ -175,6 +175,43 @@
   ::-webkit-scrollbar{ width:8px; }
   ::-webkit-scrollbar-track{ background:var(--card); }
   ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+
+ /* Masuk bagian untuk panel Titrasi */
+  html,body{ height:100%; }
+  body{ display:flex; flex-direction:column; min-width:900px; min-height:600px; }
+  header{ height:64px; flex-shrink:0; }
+  .app-body{ flex:1; display:flex; min-height:0; }
+  .sidebar{ width:180px; flex-shrink:0; background:var(--panel); display:flex; flex-direction:column; align-items:center; }
+  .sidebar .menu-label{ align-self:stretch; color:var(--subtext); font-size:10px; font-weight:bold; padding:20px 16px 8px; }
+  .nav-btn{ width:160px; height:44px; margin:2px 10px; border:none; border-radius:8px; background:transparent;
+    color:var(--text); font-family:"Courier New", monospace; font-size:12px; font-weight:bold; text-align:left; padding:0 14px; cursor:pointer; }
+  .nav-btn:hover{ background:var(--card); }
+  .nav-btn.active{ background:var(--accent); color:#0f1117; }
+  .nav-btn.active:hover{ background:var(--card); }
+  .content{ flex:1; min-width:0; padding:10px; display:flex; }
+  #panel-kalkulator{ flex:1; max-width:none; margin:0; overflow-y:auto; }
+
+  /* Panel nya*/
+  #panel-titrasi{ flex:1; display:none; grid-template-columns:minmax(0,1fr) minmax(0,2fr);
+    grid-template-rows:minmax(0,1fr); gap:8px; min-height:0; }
+  .titr-left{ background:var(--panel); border-radius:12px; padding:10px 14px; overflow-y:auto; min-height:0; }
+  .titr-right{ background:var(--panel); border-radius:12px; position:relative; min-width:0; min-height:0; }
+  #titr_canvas{ position:absolute; left:8px; top:8px; width:calc(100% - 16px); height:calc(100% - 16px); display:block; }
+  .titr-label{ color:var(--subtext); font-size:11px; margin:6px 0 0; }
+  .seg{ display:flex; background:var(--card); border-radius:6px; padding:3px; margin-bottom:6px; }
+  .seg button{ flex:1; background:var(--card); color:var(--text); border:none; border-radius:6px;
+    font-family:"Courier New", monospace; font-size:10px; font-weight:bold; white-space:pre-line;
+    line-height:1.3; padding:4px 6px; cursor:pointer; }
+  .seg button:hover{ background:#696969; }
+  .seg button.active{ background:var(--accent); }
+  .seg button.active:hover{ background:var(--accent2); }
+  #titr_jenis2{ margin-bottom:14px; }
+  #titr_entries input[type="text"]{ display:block; width:100%; }
+  .titr-plot-btn{ display:block; width:200px; margin:14px auto; }
+  .titr-info{ background:var(--card); border:1px solid var(--border); border-radius:8px; height:160px;
+    overflow-y:auto; padding:10px 12px; color:var(--success); font-size:12px; font-weight:bold;
+    white-space:pre-wrap; margin-bottom:8px; }
+
 </style>
 </head>
 <body>
@@ -184,6 +221,20 @@
 </header>
 
 <main>
+    <section id="panel-titrasi">
+      <div class="titr-left">
+        <div class="section-title"><span class="diamond">◆ Titrasi Asam-Basa</span><span class="rule"></span></div>
+        <p class="titr-label" style="margin:0 0 4px;">Jenis Titrasi</p>
+        <div class="seg" id="titr_jenis"></div>
+        <div class="seg" id="titr_jenis2"></div>
+        <div id="titr_entries"></div>
+        <button class="hitung titr-plot-btn" onclick="plotTitrasi()">Plot Titrasi</button>
+        <div class="titr-info" id="titr_info"></div>
+      </div>
+      <div class="titr-right"><canvas id="titr_canvas"></canvas></div>
+    </section>
+  </div>
+</div>
 
   <!-- Molaritas -->
   <section class="card">
@@ -279,7 +330,16 @@
     <div class="history-box" id="pp_history"></div>
   </section>
 
-</main>
+<div class="app-body">
+  <aside class="sidebar">
+    <div class="menu-label">MENU</div>
+    <button class="nav-btn" data-key="kalkulator" onclick="switchPanel('kalkulator')">Kalkulator</button>
+    <button class="nav-btn" data-key="titrasi" onclick="switchPanel('titrasi')">Titrasi</button>
+  </aside>
+  <div class="content">
+<main id="panel-kalkulator">
+
+/* </main> */
 
 <script>
   // ---------- tabel AR (massa atom relatif) ----------
@@ -548,6 +608,538 @@
     showResult("pp_result", teks);
     addHistory("pp_history", teks);
   }
+  
+  // ================= TITRASI =================
+  const INDIKATOR_LIST = [
+    ["Timol Biru (asam)",   1.2,  2.8], ["Metil Jingga",        3.1,  4.4],
+    ["Bromkresol Hijau",    3.8,  5.4], ["Metil Merah",         4.4,  6.2],
+    ["Bromkresol Ungu",     5.2,  6.8], ["Bromtimol Biru",      6.0,  7.6],
+    ["Fenol Merah",         6.8,  8.4], ["Neutral Red",         6.8,  8.0],
+    ["Timol Biru (basa)",   8.0,  9.6], ["Fenolftalein",        8.2, 10.0],
+    ["Timolftalein",        9.3, 10.5], ["Alizarin Kuning R",  10.1, 12.0],
+    ["Indigo Karmin",      11.4, 13.0],
+  ];
+  function rekomendasiIndikator(pH_eq){
+    return INDIKATOR_LIST.filter(([n, lo, hi]) => lo <= pH_eq && pH_eq <= hi).map(x => x[0]);
+  }
+
+  // ---------- padanan numpy / python ----------
+  function linspace(start, stop, num){
+    const step = (stop - start) / (num - 1), out = new Array(num);
+    for (let i = 0; i < num; i++) out[i] = i * step + start;
+    if (num > 1) out[num - 1] = stop;
+    return out;
+  }
+  function isClose(a, b){ return a === b || Math.abs(a - b) <= 1e-8 + 1e-5 * Math.abs(b); }
+  function pyDiv(a, b){ if (b === 0) throw new Error("float division by zero"); return a / b; }
+  function pyInt(x){
+    if (Number.isNaN(x)) throw new Error("cannot convert float NaN to integer");
+    if (!Number.isFinite(x)) throw new Error("cannot convert float infinity to integer");
+    return Math.trunc(x);
+  }
+  function gradient(f, x){
+    const n = f.length, g = new Array(n), dx = [];
+    for (let i = 0; i < n - 1; i++) dx.push(x[i + 1] - x[i]);
+    const uniform = dx.every(v => v === dx[0]);
+    g[0] = (f[1] - f[0]) / dx[0];
+    g[n - 1] = (f[n - 1] - f[n - 2]) / dx[n - 2];
+    for (let i = 1; i < n - 1; i++){
+      if (uniform) g[i] = (f[i + 1] - f[i - 1]) / (2 * dx[0]);
+      else {
+        const h1 = dx[i - 1], h2 = dx[i];
+        g[i] = -h2 / (h1 * (h1 + h2)) * f[i - 1] + (h2 - h1) / (h1 * h2) * f[i] + h1 / (h2 * (h1 + h2)) * f[i + 1];
+      }
+    }
+    return g;
+  }
+  function argmax(a){
+    let idx = 0;
+    for (let i = 0; i < a.length; i++){
+      if (Number.isNaN(a[i])) return i;
+      if (a[i] > a[idx]) idx = i;
+    }
+    return idx;
+  }
+  function fmt2(x){
+    if (Number.isNaN(x)) return "nan";
+    if (!Number.isFinite(x)) return x > 0 ? "inf" : "-inf";
+    return x.toFixed(2);
+  }
+  const lgRatio = (a, b) => Math.log10(Math.max(a, 1e-30) / Math.max(b, 1e-30));
+
+  // ---------- state & UI ----------
+  const JENIS1 = ["Asam Kuat\n× Basa Kuat", "Asam Lemah\n× Basa Kuat", "Basa Lemah\n× Asam Kuat"];
+  const JENIS2 = ["Asam Poliprotik\n× Basa Kuat", "Basa Poliprotik\n× Asam Kuat"];
+  let titrJenis = "Asam Kuat\n× Basa Kuat", titrJenis2 = "";
+  let titrEntries = {};
+  let titrPlot = null;
+
+  function buildSeg(id, values, handler){
+    const box = document.getElementById(id);
+    values.forEach(v => {
+      const b = document.createElement("button");
+      b.textContent = v; b.dataset.val = v; b.onclick = () => handler(v);
+      box.appendChild(b);
+    });
+  }
+  function setSeg(id, v){
+    document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle("active", b.dataset.val === v));
+  }
+
+  function buildEntries(mode){
+    const box = document.getElementById("titr_entries");
+    box.innerHTML = "";
+    titrEntries = {};
+    let fields;
+    if (mode === "strong"){
+      fields = [["Ma", "M Asam (M)"], ["Va", "V Asam (mL)"], ["Mb", "M Basa (M)"]];
+    } else if (mode === "weak_acid"){
+      fields = [["Ka", "Ka"], ["Ma", "M Asam (M)"], ["Va", "V Asam (mL)"], ["Mb", "M Basa (M)"]];
+    } else if (mode === "poly_acid"){
+      fields = [["n", "Jumlah proton (2 atau 3)"], ["Ka1", "Ka1"], ["Ka2", "Ka2"], ["Ka3", "Ka3 (isi 0 jika diprotik)"],
+                ["Ma", "M Asam Poliprotik (M)"], ["Va", "V Asam (mL)"], ["Mb", "M Basa Kuat (M)"]];
+    } else if (mode === "poly_base"){
+      fields = [["n", "Jumlah proton (2 atau 3)"], ["Kb1", "Kb1"], ["Kb2", "Kb2"], ["Kb3", "Kb3 (isi 0 jika diprotik)"],
+                ["Mb", "M Basa Poliprotik (M)"], ["Vb", "V Basa (mL)"], ["Ma", "M Asam Kuat (M)"]];
+    } else {
+      fields = [["Kb", "Kb"], ["Mb", "M Basa (M)"], ["Vb", "V Basa (mL)"], ["Ma", "M Asam (M)"]];
+    }
+    for (const [key, ph] of fields){
+      const lbl = document.createElement("p");
+      lbl.className = "titr-label"; lbl.textContent = ph;
+      const e = document.createElement("input");
+      e.type = "text"; e.placeholder = ph;
+      box.appendChild(lbl); box.appendChild(e);
+      titrEntries[key] = e;
+    }
+  }
+
+  function onJenisChange(v){
+    titrJenis = v; setSeg("titr_jenis", v);
+    titrJenis2 = ""; setSeg("titr_jenis2", "");
+    if (v.includes("Kuat\n× Basa Kuat")) buildEntries("strong");
+    else if (v.includes("Asam Lemah")) buildEntries("weak_acid");
+    else buildEntries("weak_base");
+  }
+  function onJenis2Change(v){
+    titrJenis2 = v; setSeg("titr_jenis2", v);
+    titrJenis = ""; setSeg("titr_jenis", "");
+    if (v.includes("Asam Poliprotik")) buildEntries("poly_acid");
+    else buildEntries("poly_base");
+  }
+  function tGet(key){ return key in titrEntries ? toFloat(titrEntries[key].value) : null; }
+
+  // ---------- perhitungan (sama dengan Python) ----------
+  function calcStrong(){
+    const Ma = tGet("Ma"), Va_mL = tGet("Va"), Mb = tGet("Mb");
+    if ([Ma, Va_mL, Mb].includes(null)) throw new Error("Semua input harus diisi");
+    const Va = Va_mL / 1000;
+    const Ve = pyDiv(Ma * Va, Mb);
+    const Vb = linspace(0, 2 * Ve, 5000);
+    const n_asam = Ma * Va;
+    const pH = Vb.map(v => {
+      const n_basa = Mb * v, Vtot = Va + v;
+      if (n_basa < n_asam) return -Math.log10((n_asam - n_basa) / Vtot);
+      const OH = (n_basa - n_asam) / Vtot;
+      return OH <= 0 ? 7.0 : 14 + Math.log10(OH);
+    });
+    let idx = 0;
+    for (let i = 1; i < Vb.length; i++) if (Math.abs(Vb[i] - Ve) < Math.abs(Vb[idx] - Ve)) idx = i;
+    pH[idx] = 7.0;
+    return [Vb, pH];
+  }
+
+  function calcWeakAcid(){
+    const Ka = tGet("Ka"), Ma = tGet("Ma"), Va_mL = tGet("Va"), Mb = tGet("Mb");
+    if ([Ka, Ma, Va_mL, Mb].includes(null)) throw new Error("Semua input harus diisi");
+    const Va = Va_mL / 1000;
+    const pKa = -Math.log10(Ka);
+    const Ve = pyDiv(Ma * Va, Mb);
+    const Vb = linspace(0, 2 * Ve, 5000);
+    const n_asam = Ma * Va;
+    const pH = Vb.map(v => {
+      const n_basa = Mb * v, Vtot = Va + v;
+      if (isClose(n_basa, 0)) return -Math.log10(Math.sqrt(Ka * Ma));
+      if (n_basa < n_asam){
+        const HA = n_asam - n_basa, A = n_basa;
+        if (A <= 0) return -Math.log10(Math.sqrt(Ka * Ma));
+        return pKa + Math.log10(A / HA);
+      }
+      if (isClose(n_basa, n_asam)){
+        const Cb = n_asam / Vtot, Kb = pyDiv(1e-14, Ka);
+        return 14 + Math.log10(Math.sqrt(Kb * Cb));
+      }
+      return 14 + Math.log10((n_basa - n_asam) / Vtot);
+    });
+    return [Vb, pH];
+  }
+
+  function calcWeakBase(){
+    const Kb = tGet("Kb"), Mb = tGet("Mb"), Vb_mL = tGet("Vb"), Ma = tGet("Ma");
+    if ([Kb, Mb, Vb_mL, Ma].includes(null)) throw new Error("Semua input harus diisi");
+    const Vb0 = Vb_mL / 1000;
+    const pKb = -Math.log10(Kb);
+    const Ve = pyDiv(Mb * Vb0, Ma);
+    const Va = linspace(0, 2 * Ve, 5000);
+    const n_basa = Mb * Vb0;
+    const pH = Va.map(v => {
+      const n_asam = Ma * v, Vtot = Vb0 + v;
+      if (isClose(n_asam, 0)) return 14 + Math.log10(Math.sqrt(Kb * Mb));
+      if (n_asam < n_basa){
+        const B = n_basa - n_asam, BH = n_asam;
+        if (BH <= 0) return 14 + Math.log10(Math.sqrt(Kb * Mb));
+        return 14 - (pKb + Math.log10(BH / B));
+      }
+      if (isClose(n_asam, n_basa)){
+        const Ca = n_basa / Vtot, Ka = pyDiv(1e-14, Kb);
+        return -Math.log10(Math.sqrt(Ka * Ca));
+      }
+      return -Math.log10((n_asam - n_basa) / Vtot);
+    });
+    return [Va, pH];
+  }
+
+  function calcPolyAcid(){
+    const n = pyInt(tGet("n") || 0);
+    const Ka1 = tGet("Ka1"), Ka2 = tGet("Ka2");
+    const Ka3 = n === 3 ? tGet("Ka3") : 1.0;
+    const Ma = tGet("Ma"), Va_mL = tGet("Va"), Mb = tGet("Mb");
+    if ([Ka1, Ka2, Ka3, Ma, Va_mL, Mb].includes(null) || (n !== 2 && n !== 3))
+      throw new Error("Semua input harus diisi dan n = 2 atau 3");
+    const Va = Va_mL / 1000;
+    const n_asam = Ma * Va;
+    const Ve1 = pyDiv(n_asam, Mb);
+    const V_max = (n + 1) * Ve1;
+    const Vb = linspace(0, V_max, 8000);
+    const pKa1 = -Math.log10(Ka1), pKa2 = -Math.log10(Ka2);
+    const pKa3 = n === 3 ? -Math.log10(Ka3) : null;
+    const pH = Vb.map(v => {
+      const nb = Mb * v, Vtot = Va + v;
+      if (isClose(nb, 0)) return -Math.log10(Math.max(Math.sqrt(Ka1 * Ma), 1e-14));
+      if (nb < n_asam) return pKa1 + lgRatio(nb, n_asam - nb);
+      if (isClose(nb, n_asam)) return (pKa1 + pKa2) / 2;
+      if (nb < 2 * n_asam) return pKa2 + lgRatio(nb - n_asam, 2 * n_asam - nb);
+      if (isClose(nb, 2 * n_asam)){
+        if (n === 2){
+          const Cb = n_asam / Vtot, Kb = pyDiv(1e-14, Ka2);
+          return 14 + Math.log10(Math.max(Math.sqrt(Kb * Cb), 1e-14));
+        }
+        return (pKa2 + pKa3) / 2;
+      }
+      if (n === 3 && nb < 3 * n_asam) return pKa3 + lgRatio(nb - 2 * n_asam, 3 * n_asam - nb);
+      if (n === 3 && isClose(nb, 3 * n_asam)){
+        const Cb = n_asam / Vtot, Kb = pyDiv(1e-14, Ka3);
+        return 14 + Math.log10(Math.max(Math.sqrt(Kb * Cb), 1e-14));
+      }
+      return 14 + Math.log10(Math.max((nb - n * n_asam) / Vtot, 1e-14));
+    });
+    return [Vb, pH];
+  }
+
+  function calcPolyBase(){
+    const n = pyInt(tGet("n") || 0);
+    const Kb1 = tGet("Kb1"), Kb2 = tGet("Kb2");
+    const Kb3 = n === 3 ? tGet("Kb3") : 1.0;
+    const Mb = tGet("Mb"), Vb_mL = tGet("Vb"), Ma = tGet("Ma");
+    if ([Kb1, Kb2, Kb3, Mb, Vb_mL, Ma].includes(null) || (n !== 2 && n !== 3))
+      throw new Error("Semua input harus diisi dan n = 2 atau 3");
+    const Vb0 = Vb_mL / 1000;
+    const n_basa = Mb * Vb0;
+    const Ve1 = pyDiv(n_basa, Ma);
+    const V_max = (n + 1) * Ve1;
+    const Va = linspace(0, V_max, 8000);
+    const pKb1 = -Math.log10(Kb1), pKb2 = -Math.log10(Kb2);
+    const pKb3 = n === 3 ? -Math.log10(Kb3) : null;
+    const Ka1 = pyDiv(1e-14, Kb1), Ka2 = pyDiv(1e-14, Kb2);
+    const Ka3 = n === 3 ? pyDiv(1e-14, Kb3) : null;
+    const pKa1 = -Math.log10(Ka1), pKa2 = -Math.log10(Ka2);
+    const pKa3 = Ka3 ? -Math.log10(Ka3) : null;
+    const pH = Va.map(v => {
+      const na = Ma * v, Vtot = Vb0 + v;
+      if (isClose(na, 0)) return 14 + Math.log10(Math.max(Math.sqrt(Kb1 * Mb), 1e-14));
+      if (na < n_basa) return 14 - (pKb1 + lgRatio(na, n_basa - na));
+      if (isClose(na, n_basa)) return (pKa1 + pKa2) / 2;
+      if (na < 2 * n_basa) return 14 - (pKb2 + lgRatio(na - n_basa, 2 * n_basa - na));
+      if (isClose(na, 2 * n_basa)){
+        if (n === 2){
+          const Ca = n_basa / Vtot;
+          return -Math.log10(Math.max(Math.sqrt(Ka2 * Ca), 1e-14));
+        }
+        return (pKa2 + pKa3) / 2;
+      }
+      if (n === 3 && na < 3 * n_basa) return 14 - (pKb3 + lgRatio(na - 2 * n_basa, 3 * n_basa - na));
+      if (n === 3 && isClose(na, 3 * n_basa)){
+        const Ca = n_basa / Vtot;
+        return -Math.log10(Math.max(Math.sqrt(Ka3 * Ca), 1e-14));
+      }
+      return -Math.log10(Math.max((na - n * n_basa) / Vtot, 1e-14));
+    });
+    return [Va, pH];
+  }
+
+  // ---------- tombol Plot Titrasi ----------
+  function plotTitrasi(){
+    let V, pH;
+    try {
+      if (titrJenis2.includes("Asam Poliprotik"))       [V, pH] = calcPolyAcid();
+      else if (titrJenis2.includes("Basa Poliprotik"))  [V, pH] = calcPolyBase();
+      else if (titrJenis.includes("Kuat\n× Basa Kuat")) [V, pH] = calcStrong();
+      else if (titrJenis.includes("Lemah\n× Basa Kuat"))[V, pH] = calcWeakAcid();
+      else                                              [V, pH] = calcWeakBase();
+    } catch (exc){
+      alert(`Input tidak valid:\n${exc.message}`);
+      return;
+    }
+    const dpH = gradient(pH, V);
+    const idx = argmax(dpH);
+    const Ve = V[idx], pH_eq = pH[idx];
+    const ind = rekomendasiIndikator(pH_eq);
+
+    titrPlot = { V, pH, Ve, pHeq: pH_eq };
+    drawTitrasiPlot();
+
+    const indStr = ind.length ? ind.map(i => `  • ${i}`).join("\n") : "  (tidak ada yang ideal)";
+    document.getElementById("titr_info").textContent =
+      `Titik Ekuivalen : ${fmt2(Ve * 1000)} mL\n` +
+      `pH Ekuivalen    : ${fmt2(pH_eq)}\n\n` +
+      `Indikator cocok :\n${indStr}`;
+  }
+
+  // ---------- plot (meniru matplotlib) ----------
+  const MPL_PT = 100 / 72;
+  const MPL_FONT = '"DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif';
+
+  function autoLimits(vals){
+    let lo = Infinity, hi = -Infinity;
+    for (const v of vals) if (Number.isFinite(v)){ if (v < lo) lo = v; if (v > hi) hi = v; }
+    if (lo === Infinity) return [0, 1];
+    if (hi - lo <= Math.max(Math.abs(lo), Math.abs(hi)) * 1e-15){
+      if (lo === 0 && hi === 0){ lo = -0.05; hi = 0.05; }
+      else { lo -= 0.05 * Math.abs(lo); hi += 0.05 * Math.abs(hi); }
+    }
+    const m = (hi - lo) * 0.05;
+    return [lo - m, hi + m];
+  }
+  function makeTicks(lo, hi, nbins){
+    const raw = (hi - lo) / nbins;
+    const scale = Math.pow(10, Math.floor(Math.log10(raw)));
+    let step = 10 * scale;
+    for (const s of [1, 2, 2.5, 5, 10]) if (s * scale >= raw){ step = s * scale; break; }
+    const ticks = [];
+    for (let i = Math.ceil(lo / step - 1e-10); i <= Math.floor(hi / step + 1e-10); i++)
+      ticks.push(+(i * step).toPrecision(12));
+    let d = 0;
+    while (d < 10 && !ticks.every(t => Math.abs(+t.toFixed(d) - t) < 1e-9 * Math.max(1, Math.abs(t)))) d++;
+    const labels = ticks.map(t => (t === 0 ? 0 : t).toFixed(d).replace("-", "\u2212"));
+    return { ticks, labels };
+  }
+  function segHitsRect(x1, y1, x2, y2, r){
+    let t0 = 0, t1 = 1;
+    const dx = x2 - x1, dy = y2 - y1;
+    const p = [-dx, dx, -dy, dy], q = [x1 - r.x, r.x + r.w - x1, y1 - r.y, r.y + r.h - y1];
+    for (let i = 0; i < 4; i++){
+      if (p[i] === 0){ if (q[i] < 0) return false; }
+      else {
+        const t = q[i] / p[i];
+        if (p[i] < 0){ if (t > t1) return false; if (t > t0) t0 = t; }
+        else { if (t < t0) return false; if (t < t1) t1 = t; }
+      }
+    }
+    return true;
+  }
+
+  function drawTitrasiPlot(){
+    const cv = document.getElementById("titr_canvas");
+    const W = cv.clientWidth, H = cv.clientHeight;
+    if (W < 50 || H < 50) return;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    const ctx = cv.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const font = (pt, bold) => `${bold ? "bold " : ""}${pt * MPL_PT}px ${MPL_FONT}`;
+    const C = { fig:"#1a1d27", ax:"#20232e", text:"#e8eaf6", sub:"#7986cb", accent:"#4fc3f7",
+                border:"#2a2d3e", danger:"#ff5252", success:"#69f0ae", warning:"#ffd740", card:"#20232e" };
+    const line = (x1, y1, x2, y2) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
+
+    ctx.fillStyle = C.fig; ctx.fillRect(0, 0, W, H);
+
+    const d = titrPlot;
+    let xl = [0, 1], yl = [0, 1], xs = null;
+    if (d){
+      xs = d.V.map(v => v * 1000);
+      xl = autoLimits(xs.concat([d.Ve * 1000]));
+      yl = autoLimits(d.pH.concat([d.pHeq]));
+    }
+
+    // tight_layout
+    const fs10 = 10 * MPL_PT, fs12 = 12 * MPL_PT;
+    const tickLen = 3.5 * MPL_PT, tickPad = 3.5 * MPL_PT, labPad = 4 * MPL_PT, pad = 1.08 * 10 * MPL_PT;
+    const top = pad + fs12 + 6 * MPL_PT;
+    const bottom = pad + fs10 + labPad + fs10 + tickPad + tickLen;
+    const axH = H - top - bottom;
+    const yt = makeTicks(yl[0], yl[1], Math.max(1, Math.min(9, Math.floor(axH / MPL_PT / 20))));
+    ctx.font = font(10);
+    const yw = Math.max(0, ...yt.labels.map(s => ctx.measureText(s).width));
+    const left = pad + fs10 + labPad + yw + tickPad + tickLen;
+    let right = pad, axW = W - left - right;
+    const xt = makeTicks(xl[0], xl[1], Math.max(1, Math.min(9, Math.floor(axW / MPL_PT / 30))));
+    if (xt.ticks.length){
+      const last = xt.ticks[xt.ticks.length - 1];
+      const lw = ctx.measureText(xt.labels[xt.labels.length - 1]).width;
+      const over = axW * (last - xl[0]) / (xl[1] - xl[0]) + lw / 2 - axW;
+      if (over > 0){ right += over; axW = W - left - right; }
+    }
+    const ax = { x: left, y: top, w: axW, h: axH };
+    const sx = v => ax.x + (v - xl[0]) / (xl[1] - xl[0]) * ax.w;
+    const sy = v => ax.y + ax.h - (v - yl[0]) / (yl[1] - yl[0]) * ax.h;
+
+    // area axes + grid
+    ctx.fillStyle = C.ax; ctx.fillRect(ax.x, ax.y, ax.w, ax.h);
+    ctx.strokeStyle = C.border; ctx.lineWidth = 0.5 * MPL_PT;
+    ctx.setLineDash([3.7 * 0.5 * MPL_PT, 1.6 * 0.5 * MPL_PT]);
+    xt.ticks.forEach(t => line(sx(t), ax.y, sx(t), ax.y + ax.h));
+    yt.ticks.forEach(t => line(ax.x, sy(t), ax.x + ax.w, sy(t)));
+    ctx.setLineDash([]);
+
+    if (d){
+      ctx.save();
+      ctx.beginPath(); ctx.rect(ax.x, ax.y, ax.w, ax.h); ctx.clip();
+      // kurva pH
+      ctx.strokeStyle = C.accent; ctx.lineWidth = 2.5 * MPL_PT; ctx.lineJoin = "round"; ctx.lineCap = "square";
+      ctx.beginPath();
+      let pen = false;
+      for (let i = 0; i < xs.length; i++){
+        const y = d.pH[i];
+        if (!Number.isFinite(xs[i]) || !Number.isFinite(y)){ pen = false; continue; }
+        if (pen) ctx.lineTo(sx(xs[i]), sy(y)); else { ctx.moveTo(sx(xs[i]), sy(y)); pen = true; }
+      }
+      ctx.stroke();
+      ctx.lineCap = "butt";
+      // axvline ekuivalen
+      ctx.strokeStyle = C.danger; ctx.lineWidth = 1.5 * MPL_PT;
+      ctx.setLineDash([3.7 * 1.5 * MPL_PT, 1.6 * 1.5 * MPL_PT]);
+      line(sx(d.Ve * 1000), ax.y, sx(d.Ve * 1000), ax.y + ax.h);
+      // axhline pH
+      ctx.globalAlpha = 0.7; ctx.strokeStyle = C.success; ctx.lineWidth = 1 * MPL_PT;
+      ctx.setLineDash([1 * MPL_PT, 1.65 * MPL_PT]);
+      line(ax.x, sy(d.pHeq), ax.x + ax.w, sy(d.pHeq));
+      ctx.globalAlpha = 1; ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    // spines
+    ctx.strokeStyle = C.border; ctx.lineWidth = 0.8 * MPL_PT;
+    ctx.strokeRect(ax.x, ax.y, ax.w, ax.h);
+
+    // titik ekuivalen (scatter)
+    if (d && Number.isFinite(d.Ve) && Number.isFinite(d.pHeq)){
+      ctx.save();
+      ctx.beginPath(); ctx.rect(ax.x, ax.y, ax.w, ax.h); ctx.clip();
+      ctx.fillStyle = C.warning;
+      ctx.beginPath(); ctx.arc(sx(d.Ve * 1000), sy(d.pHeq), (Math.sqrt(80) / 2 + 0.75) * MPL_PT, 0, 2 * Math.PI); ctx.fill();
+      ctx.restore();
+    }
+
+    // ticks & label angka
+    ctx.strokeStyle = C.text; ctx.lineWidth = 0.8 * MPL_PT;
+    ctx.fillStyle = C.text; ctx.font = font(10);
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    xt.ticks.forEach((t, i) => {
+      line(sx(t), ax.y + ax.h, sx(t), ax.y + ax.h + tickLen);
+      ctx.fillText(xt.labels[i], sx(t), ax.y + ax.h + tickLen + tickPad);
+    });
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    yt.ticks.forEach((t, i) => {
+      line(ax.x - tickLen, sy(t), ax.x, sy(t));
+      ctx.fillText(yt.labels[i], ax.x - tickLen - tickPad, sy(t));
+    });
+
+    // label sumbu
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.fillText("Volume Penitrasi (mL)", ax.x + ax.w / 2, ax.y + ax.h + tickLen + tickPad + fs10 + labPad);
+    ctx.save();
+    ctx.translate(ax.x - tickLen - tickPad - yw - labPad, ax.y + ax.h / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textBaseline = "bottom";
+    ctx.fillText("pH", 0, 0);
+    ctx.restore();
+
+    // judul
+    ctx.fillStyle = C.accent; ctx.font = font(12, true);
+    ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    ctx.fillText(d ? "Kurva Titrasi Asam-Basa" : "Kurva Titrasi", ax.x + ax.w / 2, ax.y - 6 * MPL_PT);
+
+    if (!d){
+      ctx.fillStyle = C.sub; ctx.font = font(12);
+      ctx.textBaseline = "middle";
+      ctx.fillText("Plot akan muncul di sini", ax.x + ax.w / 2, ax.y + ax.h / 2);
+      return;
+    }
+
+    // legend (loc="best")
+    const fs = 9 * MPL_PT;
+    const items = [
+      { label: "Kurva pH", color: C.accent, lw: 2.5, dash: null, alpha: 1 },
+      { label: `Ekuivalen ${fmt2(d.Ve * 1000)} mL`, color: C.danger, lw: 1.5, dash: [3.7, 1.6], alpha: 1 },
+      { label: `pH = ${fmt2(d.pHeq)}`, color: C.success, lw: 1, dash: [1, 1.65], alpha: 0.7 },
+    ];
+    ctx.font = font(9);
+    const tw = Math.max(...items.map(it => ctx.measureText(it.label).width));
+    const bp = 0.4 * fs, hl = 2 * fs, htp = 0.8 * fs, ls = 0.5 * fs, bap = 0.5 * fs;
+    const lgW = bp * 2 + hl + htp + tw, lgH = bp * 2 + items.length * fs + (items.length - 1) * ls;
+    const L = ax.x + bap, R = ax.x + ax.w - bap - lgW, T = ax.y + bap, B = ax.y + ax.h - bap - lgH;
+    const CX = ax.x + (ax.w - lgW) / 2, CY = ax.y + (ax.h - lgH) / 2;
+    const cands = [[R, T], [L, T], [L, B], [R, B], [R, CY], [L, CY], [R, CY], [CX, B], [CX, T], [CX, CY]];
+    const vx = sx(d.Ve * 1000), hy = sy(d.pHeq), px = sx(d.Ve * 1000), py = sy(d.pHeq);
+    let best = cands[0], bestBad = Infinity;
+    for (const [cx, cy] of cands){
+      const r = { x: cx, y: cy, w: lgW, h: lgH };
+      let bad = 0;
+      if (px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h) bad++;
+      for (let i = 1; i < xs.length; i++){
+        const a = [xs[i - 1], d.pH[i - 1]], b = [xs[i], d.pH[i]];
+        if (![...a, ...b].every(Number.isFinite)) continue;
+        if (segHitsRect(sx(a[0]), sy(a[1]), sx(b[0]), sy(b[1]), r)){ bad++; break; }
+      }
+      if (segHitsRect(vx, ax.y, vx, ax.y + ax.h, r)) bad++;
+      if (segHitsRect(ax.x, hy, ax.x + ax.w, hy, r)) bad++;
+      if (bad < bestBad){ bestBad = bad; best = [cx, cy]; }
+      if (bad === 0) break;
+    }
+    const [lx, ly] = best;
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(lx, ly, lgW, lgH, 0.2 * fs); else ctx.rect(lx, ly, lgW, lgH);
+    ctx.fillStyle = C.card; ctx.fill();
+    ctx.strokeStyle = C.border; ctx.lineWidth = 1 * MPL_PT; ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    items.forEach((it, i) => {
+      const yy = ly + bp + i * (fs + ls) + fs / 2;
+      ctx.globalAlpha = it.alpha;
+      ctx.strokeStyle = it.color; ctx.lineWidth = it.lw * MPL_PT;
+      ctx.setLineDash(it.dash ? it.dash.map(v => v * it.lw * MPL_PT) : []);
+      line(lx + bp, yy, lx + bp + hl, yy);
+      ctx.globalAlpha = 1; ctx.setLineDash([]);
+      ctx.fillStyle = C.text;
+      ctx.fillText(it.label, lx + bp + hl + htp, yy);
+    });
+  }
+
+  // ---------- navigasi sidebar ----------
+  function switchPanel(key){
+    document.getElementById("panel-kalkulator").style.display = key === "kalkulator" ? "block" : "none";
+    document.getElementById("panel-titrasi").style.display = key === "titrasi" ? "grid" : "none";
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.key === key));
+  }
+
+  // ---------- inisialisasi ----------
+  buildSeg("titr_jenis", JENIS1, onJenisChange);
+  buildSeg("titr_jenis2", JENIS2, onJenis2Change);
+  setSeg("titr_jenis", titrJenis);
+  buildEntries("strong");
+  new ResizeObserver(() => drawTitrasiPlot()).observe(document.querySelector(".titr-right"));
+  switchPanel("kalkulator");
 </script>
 
 </body>
