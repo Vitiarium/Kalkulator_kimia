@@ -176,26 +176,25 @@
   ::-webkit-scrollbar-track{ background:var(--card); }
   ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
 
- /* Masuk bagian untuk panel Titrasi */
-  html,body{ height:100%; }
-  body{ display:flex; flex-direction:column; min-width:900px; min-height:600px; }
-  header{ height:64px; flex-shrink:0; }
-  .app-body{ flex:1; display:flex; min-height:0; }
-  .sidebar{ width:180px; flex-shrink:0; background:var(--panel); display:flex; flex-direction:column; align-items:center; }
-  .sidebar .menu-label{ align-self:stretch; color:var(--subtext); font-size:10px; font-weight:bold; padding:20px 16px 8px; }
-  .nav-btn{ width:160px; height:44px; margin:2px 10px; border:none; border-radius:8px; background:transparent;
-    color:var(--text); font-family:"Courier New", monospace; font-size:12px; font-weight:bold; text-align:left; padding:0 14px; cursor:pointer; }
-  .nav-btn:hover{ background:var(--card); }
-  .nav-btn.active{ background:var(--accent); color:#0f1117; }
-  .nav-btn.active:hover{ background:var(--card); }
-  .content{ flex:1; min-width:0; padding:10px; display:flex; }
-  #panel-kalkulator{ flex:1; max-width:none; margin:0; overflow-y:auto; }
-
-  /* Panel nya*/
-  #panel-titrasi{ flex:1; display:none; grid-template-columns:minmax(0,1fr) minmax(0,2fr);
-    grid-template-rows:minmax(0,1fr); gap:8px; min-height:0; }
-  .titr-left{ background:var(--panel); border-radius:12px; padding:10px 14px; overflow-y:auto; min-height:0; }
-  .titr-right{ background:var(--panel); border-radius:12px; position:relative; min-width:0; min-height:0; }
+  /* Bagian Titrasi (satu halaman dengan kalkulator) */
+  #panel-titrasi{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,2fr);
+    gap:8px;
+  }
+  .titr-left{
+    background:var(--panel); border-radius:12px; padding:10px 14px;
+    max-height:560px; overflow-y:auto;
+  }
+  .titr-right{
+    background:var(--panel); border-radius:12px;
+    position:relative; min-width:0; height:560px;
+  }
+  @media (max-width:700px){
+    #panel-titrasi{ grid-template-columns:1fr; }
+    .titr-left{ max-height:none; }
+    .titr-right{ height:380px; }
+  }
   #titr_canvas{ position:absolute; left:8px; top:8px; width:calc(100% - 16px); height:calc(100% - 16px); display:block; }
   .titr-label{ color:var(--subtext); font-size:11px; margin:6px 0 0; }
   .seg{ display:flex; background:var(--card); border-radius:6px; padding:3px; margin-bottom:6px; }
@@ -221,20 +220,6 @@
 </header>
 
 <main>
-    <section id="panel-titrasi">
-      <div class="titr-left">
-        <div class="section-title"><span class="diamond">◆ Titrasi Asam-Basa</span><span class="rule"></span></div>
-        <p class="titr-label" style="margin:0 0 4px;">Jenis Titrasi</p>
-        <div class="seg" id="titr_jenis"></div>
-        <div class="seg" id="titr_jenis2"></div>
-        <div id="titr_entries"></div>
-        <button class="hitung titr-plot-btn" onclick="plotTitrasi()">Plot Titrasi</button>
-        <div class="titr-info" id="titr_info"></div>
-      </div>
-      <div class="titr-right"><canvas id="titr_canvas"></canvas></div>
-    </section>
-  </div>
-</div>
 
   <!-- Molaritas -->
   <section class="card">
@@ -286,7 +271,7 @@
 
   <!-- pH Buffer -->
   <section class="card">
-    <div class="section-title"><span class="diamond">◆ pH Buffer</span><span class="rule"></span></div>
+    <div class="section-title"><span class="diamond">pH Buffer</span><span class="rule"></span></div>
     <div class="toggle-group" id="buf_toggle">
       <button class="active" data-val="Buffer Asam" onclick="toggleBuffer('Buffer Asam')">Buffer Asam</button>
       <button data-val="Buffer Basa" onclick="toggleBuffer('Buffer Basa')">Buffer Basa</button>
@@ -330,14 +315,23 @@
     <div class="history-box" id="pp_history"></div>
   </section>
 
-<div class="app-body">
-  <aside class="sidebar">
-    <div class="menu-label">MENU</div>
-    <button class="nav-btn" data-key="kalkulator" onclick="switchPanel('kalkulator')">Kalkulator</button>
-    <button class="nav-btn" data-key="titrasi" onclick="switchPanel('titrasi')">Titrasi</button>
-  </aside>
-  <div class="content">
-<main id="panel-kalkulator">
+  <!-- Titrasi Asam-Basa -->
+  <section class="card">
+    <div class="section-title"><span class="diamond">◆ Titrasi Asam-Basa</span><span class="rule"></span></div>
+    <div id="panel-titrasi">
+      <div class="titr-left">
+        <p class="titr-label" style="margin:0 0 4px;">Jenis Titrasi</p>
+        <div class="seg" id="titr_jenis"></div>
+        <div class="seg" id="titr_jenis2"></div>
+        <div id="titr_entries"></div>
+        <button class="hitung titr-plot-btn" onclick="plotTitrasi()">Plot Titrasi</button>
+        <div class="titr-info" id="titr_info"></div>
+      </div>
+      <div class="titr-right"><canvas id="titr_canvas"></canvas></div>
+    </div>
+  </section>
+
+</main>
 
 /* </main> */
 
@@ -1126,19 +1120,19 @@
     });
   }
 
-  // ---------- navigasi sidebar ----------
-  function switchPanel(key){
-    document.getElementById("panel-kalkulator").style.display = key === "kalkulator" ? "block" : "none";
-    document.getElementById("panel-titrasi").style.display = key === "titrasi" ? "grid" : "none";
-    document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.key === key));
-  }
-
   // ---------- inisialisasi ----------
   buildSeg("titr_jenis2", JENIS2, onJenis2Change);
   setSeg("titr_jenis2", titrJenis);
   buildEntries("strong");
   new ResizeObserver(() => drawTitrasiPlot()).observe(document.querySelector(".titr-right"));
   switchPanel("kalkulator");
+
+  // ---------- inisialisasi ----------
+  buildSeg("titr_jenis", JENIS1, onJenisChange);
+  buildSeg("titr_jenis2", JENIS2, onJenis2Change);
+  setSeg("titr_jenis", titrJenis);
+  buildEntries("strong");
+  new ResizeObserver(() => drawTitrasiPlot()).observe(document.querySelector(".titr-right"));
 </script>
 
 </body>
