@@ -1135,9 +1135,8 @@
   }
 
   // ---------- inisialisasi ----------
-  buildSeg("titr_jenis", JENIS1, onJenisChange);
   buildSeg("titr_jenis2", JENIS2, onJenis2Change);
-  setSeg("titr_jenis", titrJenis);
+  setSeg("titr_jenis2", titrJenis);
   buildEntries("strong");
   new ResizeObserver(() => drawTitrasiPlot()).observe(document.querySelector(".titr-right"));
   switchPanel("kalkulator");
