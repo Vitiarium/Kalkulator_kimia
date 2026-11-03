@@ -577,7 +577,7 @@
     }
   }
 
-  // ---------- Pereaksi Pembatas ----------
+
   function hitungPp(){
     const a = toFloat(val("pp_a"));
     const ma = toFloat(val("pp_ma"));
@@ -603,7 +603,7 @@
     addHistory("pp_history", teks);
   }
   
-  // ================= TITRASI =================
+
   const INDIKATOR_LIST = [
     ["Timol Biru (asam)",   1.2,  2.8], ["Metil Jingga",        3.1,  4.4],
     ["Bromkresol Hijau",    3.8,  5.4], ["Metil Merah",         4.4,  6.2],
@@ -617,7 +617,6 @@
     return INDIKATOR_LIST.filter(([n, lo, hi]) => lo <= pH_eq && pH_eq <= hi).map(x => x[0]);
   }
 
-  // ---------- padanan numpy / python ----------
   function linspace(start, stop, num){
     const step = (stop - start) / (num - 1), out = new Array(num);
     for (let i = 0; i < num; i++) out[i] = i * step + start;
@@ -661,7 +660,7 @@
   }
   const lgRatio = (a, b) => Math.log10(Math.max(a, 1e-30) / Math.max(b, 1e-30));
 
-  // ---------- state & UI ----------
+
   const JENIS1 = ["Asam Kuat\n× Basa Kuat", "Asam Lemah\n× Basa Kuat", "Basa Lemah\n× Asam Kuat"];
   const JENIS2 = ["Asam Poliprotik\n× Basa Kuat", "Basa Poliprotik\n× Asam Kuat"];
   let titrJenis = "Asam Kuat\n× Basa Kuat", titrJenis2 = "";
@@ -723,7 +722,6 @@
   }
   function tGet(key){ return key in titrEntries ? toFloat(titrEntries[key].value) : null; }
 
-  // ---------- perhitungan (sama dengan Python) ----------
   function calcStrong(){
     const Ma = tGet("Ma"), Va_mL = tGet("Va"), Mb = tGet("Mb");
     if ([Ma, Va_mL, Mb].includes(null)) throw new Error("Semua input harus diisi");
@@ -871,7 +869,7 @@
     return [Va, pH];
   }
 
-  // ---------- tombol Plot Titrasi ----------
+-
   function plotTitrasi(){
     let V, pH;
     try {
@@ -899,7 +897,7 @@
       `Indikator cocok :\n${indStr}`;
   }
 
-  // ---------- plot (meniru matplotlib) ----------
+
   const MPL_PT = 100 / 72;
   const MPL_FONT = '"DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif';
 
@@ -1121,6 +1119,7 @@
   }
 
   // ---------- inisialisasi ----------
+  buildSeg("titr_jenis", JENIS1, onJenisChange);
   buildSeg("titr_jenis2", JENIS2, onJenis2Change);
   setSeg("titr_jenis2", titrJenis);
   buildEntries("strong");
